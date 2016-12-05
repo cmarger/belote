@@ -1,0 +1,5 @@
+Objectif : jouer une partie de belote sur son PC en mode caractère
+Reste à faire a minima :
+Dériver une classe de Jeu spécifique à la belote
+Adapter la vue Console pour suivre le déroulement du jeu
+Oter les print du Controleur, les remplacer par un log 
