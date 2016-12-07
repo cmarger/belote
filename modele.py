@@ -14,6 +14,9 @@ novembre 2016
 """
 # utilisé quand il faut prendre une décision "au pif"
 from random import randint, shuffle
+import logging
+
+logger = logging.getLogger("modele")
 
 class Joueur(object):
     """Joeur qui prend ses décisions aléatoirement"""
@@ -23,7 +26,7 @@ class Joueur(object):
         self.visible = visible
         # les cartes dont dispose le joueur
         self.main = []
-        
+
     def recevoir(self, donne):
         """ ajoute la donne à la main du joueur"""
         # pour accepter les cas où la donne a une ou plusieurs cartes
@@ -31,11 +34,11 @@ class Joueur(object):
             self.main.extend(donne)
         else:
             self.main.append(donne)
-    
+
     def choisir(self, options):
-        """ choisit aléatoirement parmi les options"""        
-        return randint(0, len(options)-1) if len(options)> 1 else 0       
-        
+        """ choisit aléatoirement parmi les options"""
+        return randint(0, len(options)-1) if len(options)> 1 else 0
+
     def donner_une_carte(self):
         """ retourne une carte qui est retirée de la main du joueur"""
         return self.main.pop(self.choisir(self.main))
@@ -49,14 +52,14 @@ class JoueurInteractif(Joueur):
     """Joeur qui prend ses décisions de l'extérieur"""
     # les spécificités de cette classe sont définies dans la vue
     pass
-        
-		
+
+
 class Table(object):
     """ Lieu de rencontre des joueurs pour jouer"""
     def __init__(self):
        self.joueurs = []
        self.tapis = []
-       	   
+
     def accueuillir(self, *joueurs):
         """définit les joueurs de la table"""
         self.joueurs = joueurs
@@ -65,12 +68,12 @@ class Table(object):
         """prépare la table à jouer à un jeu donné"""
         self.jeu = jeu
         self.partie = jeu.creer_partie(self.joueurs, self.tapis)
-    
+
     def jouer(self):
         """ enchaine les parties tant qu'un joueur interactif le souhaite"""
         # pour l'instant, joue une seule partie
         self.partie.derouler()
-        
+
     def veut_arreter(self):
         """ retourne vrai si la décision est prise d'arrêter de jouer"""
         return True
@@ -80,7 +83,7 @@ class Carte(object):
     def __init__(self, couleur, valeur):
         self.couleur = couleur
         self.valeur = valeur
-        
+
 class Jeu(object):
     """ Jeu de cartes """
     def __init__(self, nom = "Basique", nb_cartes = 32):
@@ -101,22 +104,22 @@ class Jeu(object):
                 for valeur in valeurs:
                     carte = Carte(couleur, valeur)
                     yield carte
-        # ! attribut du jeu qui est une fonction génératrice, 
+        # ! attribut du jeu qui est une fonction génératrice,
         # et non une méthode de la classe
         self.creer_cartes = generateur_cartes
-    
+
         # définition des étapes d'une partie
         def battre(une_partie):
             """ bat les cartes à distribuer"""
             shuffle(une_partie.pioche)
-             
+
         def distribuer(une_partie):
             """ distribution de toutes les cartes aux joueurs"""
             # par défaut toutes les cartes
             while len(une_partie.pioche):
                 for joueur in une_partie.joueurs:
                     joueur.recevoir(une_partie.pioche.pop())
-        
+
         def jouer(une_partie):
             """ joue la partie """
             nb_plis = nb_cartes / len(une_partie.joueurs)
@@ -127,19 +130,19 @@ class Jeu(object):
                 une_partie.plis.append([coup for coup in une_partie.tapis])
                 # vider le tapis existant et non le réinitialiser vide
                 del une_partie.tapis[0:]
-            
+
         def compter(une_partie):
             """ compter les points """
             # par défaut même points pour chaque joueur
             for joueur in une_partie.joueurs:
                 une_partie.scores[joueur] = 100
-         
+
         # definition du processus de déroulement d'un partie
         self.plan_partie = (battre, distribuer, jouer, compter)
-        
+
     def creer_partie(self, joueurs, tapis):
         return Partie(self, joueurs, tapis)
-        
+
 class Partie(object):
     """ Partie de cartes """
     def __init__(self, jeu, joueurs, tapis):
@@ -150,13 +153,13 @@ class Partie(object):
         self.plan = jeu.plan_partie
         self.plis = []
         self.scores = {}
-        
+
     def derouler(self):
         for etapes in self.plan:
             etapes(self)
-        
-        
-        
+
+
+
 if __name__=='__main__':
     print "début des tests du modèle"
     un_jeu = Jeu()
@@ -164,7 +167,7 @@ if __name__=='__main__':
     une_table = Table()
     une_table.dedier(un_jeu)
     print une_table.partie
-    
+
     un_joueur = Joueur("Testeur")
     print un_joueur.main
     une = 3
@@ -173,7 +176,7 @@ if __name__=='__main__':
     plusieurs = range(4)
     un_joueur.recevoir(plusieurs)
     print un_joueur.main
-    
+
     print un_joueur.donner_une_carte()
     print un_joueur.main
 
@@ -189,7 +192,7 @@ if __name__=='__main__':
         print 'plis = ', une_partie.plis, len(une_partie.plis)
         print 'process =', une_partie.plan
         print "--------------------------------- "
-    
+
     print_partie(une_partie)
     for pas in une_partie.plan:
         print '===> ', pas.__name__
@@ -201,6 +204,3 @@ if __name__=='__main__':
     print_partie(une_partie)
     une_partie.derouler()
     print_partie(une_partie)
-    
-    
-    
