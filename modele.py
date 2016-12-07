@@ -46,7 +46,9 @@ class Joueur(object):
     def jouer(self, tapis, jeu):
         """ met une carte sur le tapis en fonction du tapis selon les règles du jeu"""
         # pas de réflexion, pas de suivi des règles du jeu par défaut
-        tapis.append((self, self.donner_une_carte()))
+        carte = self.donner_une_carte()
+        logger.info("{} joue {}".format(self.nom, carte))
+        tapis.append((self, carte))
 
 class JoueurInteractif(Joueur):
     """Joeur qui prend ses décisions de l'extérieur"""
@@ -57,6 +59,7 @@ class JoueurInteractif(Joueur):
 class Table(object):
     """ Lieu de rencontre des joueurs pour jouer"""
     def __init__(self):
+       logger.info("Initialisation de la table")
        self.joueurs = []
        self.tapis = []
 
@@ -111,6 +114,7 @@ class Jeu(object):
         # définition des étapes d'une partie
         def battre(une_partie):
             """ bat les cartes à distribuer"""
+            logger.info("Jeu mélangé")
             shuffle(une_partie.pioche)
 
         def distribuer(une_partie):
