@@ -49,13 +49,16 @@ class JoueurInteractif(Joueur):
     """Joeur qui prend ses décisions de l'extérieur"""
     # les spécificités de cette classe sont définies dans la vue
     pass
-        
+
+# pour pouvoir changer la représentation d'une liste
+class Tapis(list):
+    pass
 		
 class Table(object):
     """ Lieu de rencontre des joueurs pour jouer"""
     def __init__(self):
        self.joueurs = []
-       self.tapis = []
+       self.tapis = Tapis()
        	   
     def accueuillir(self, *joueurs):
         """définit les joueurs de la table"""

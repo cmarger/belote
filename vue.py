@@ -26,12 +26,33 @@ class Console(Vue):
         Définit les façons de l'afficher ainsi que ses composants
         """
         self.modele = modele
+        # nombre de caractères en largeur et ligne en hauteur
+        self.largeur = 80
+        self.hauteur = 40
+        # indicateur du joueur a cette vue
+        point_de_vue = 0
         print "Intialisation de la vue"
+        
+        # affichage du tapis
+        def voir_tapis(un_tapis):
+            # mise en forme en colonne, un coup par ligne
+            vue = ""
+            # en dur la marge, arbitraire
+            marge =  (self.largeur / 3 - self.l_max_carte)*' '
+            for coup in un_tapis:
+                vue = vue + marge + repr(coup[1]).ljust(self.l_max_carte)+ coup[0].nom + '\n'
+            return vue
+        self.modele.tapis.__class__.__repr__ = voir_tapis    
+        
         # affichage de la table
         def montrer(table):
             vue = ""
             for joueur in table.joueurs:
                 vue = vue + repr(joueur) + '\n'
+            #vue = vue + repr(table.tapis)
+            x= table.tapis
+            temp = repr(x)
+            vue = vue + temp
             return vue    
         self.modele.__class__.__repr__ = montrer
         
@@ -51,8 +72,10 @@ class Console(Vue):
         def saisir(un_joueur, des_options):
             """permet à un joueur de choisir une carte à donner"""
             # proposer la saisie
-            prompt = "Désigner une carte par son numéro d'ordre parmi " + repr(des_options) + " : "
-            erreur = "Le numéro saisi doit être entre 1 et " + str(len(des_options))
+            max = str(len(des_options))
+            prompt = "Désigner une carte parmi " + repr(des_options) + \
+                     " \npar son numéro d'ordre de 1 à " + max + " : "
+            erreur = "Le numéro saisi doit être entre 1 et " + max
             while True:
                 saisie = raw_input(prompt)
                 # convertir la saisie
@@ -84,10 +107,12 @@ class Console(Vue):
         
         # modifier l'affichage d'une carte
         table.partie.pioche[0].__class__.__repr__ = voir_carte
+        # longueur maximale de l'affichage d'une carte incluant les ()
+        self.l_max_carte = 7
         
     def afficher(self):
         """ affiche l'état courant d'ensemble"""
-        print repr(self.modele)
+        print repr(self.modele)        
         
 class Graphique(Vue):
     """ affiche en mode graphique"""
@@ -101,25 +126,27 @@ if __name__=='__main__':
     une_vue=Console(une_table)
 
     def voir_joueurs(j1,j2):
-        print 'j1 = ', repr(j1)
-        print 'carte de j1', j1.donner_une_carte()
-        print 'j1 = ', repr(j1)
-        print 'j2i = ', repr(j2i)
-        print 'carte de j2i', j2i.donner_une_carte()
-        print 'j2i = ', repr(j2i)               
+        print "2 joueurs :\n"
+        print 'j1 avant = ', repr(j1)
+        print 'carte donnée par j1', j1.donner_une_carte()
+        print 'j1 après = ', repr(j1)
+        print 'j2i avant = ', repr(j2i)
+        print 'carte donnée par j2i\n', j2i.donner_une_carte()
+        print 'j2i après = ', repr(j2i)               
     
     # Test Joueur
-    print "Sans la vue personnalisée ---------------------------"
     j1 = m.Joueur("automatique", True)
     j2i = m.JoueurInteractif("intertactif", True)
-    j1.recevoir((m.Carte(0,1), m.Carte(1,7), m.Carte(2,11)))
-    j2i.recevoir([m.Carte(2,11), m.Carte(3,13), m.Carte(0,9)])
+    j1.recevoir((m.Carte(0,10), m.Carte(1,10), m.Carte(2,10)))
+    j2i.recevoir([m.Carte(2,12), m.Carte(3,13), m.Carte(0,9)])
     print "j1 interactif ?", j1.__class__.__name__
     print "j2i interactif ?", j2i.__class__.__name__
+    print "Sans la vue personnalisée ---------------------------"
     voir_joueurs(j1, j2i)
     
     une_table.accueuillir(j1, j2i)
-    une_table.dedier(m.Jeu())
+    un_jeu = m.Jeu()
+    une_table.dedier(un_jeu)
     une_vue.personnaliser(une_table)
     print "Avec la vue personnalisée ---------------------------"
     carte1 = m.Carte(3, 10)
@@ -128,3 +155,10 @@ if __name__=='__main__':
 
     print repr(une_table)
     voir_joueurs(j1, j2i)
+    
+    # Test tapis
+    j1.jouer(une_table.tapis, un_jeu)
+    j2i.jouer(une_table.tapis, un_jeu)
+    print repr(une_table)
+    
+    
