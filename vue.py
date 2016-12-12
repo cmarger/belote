@@ -13,6 +13,8 @@ Licence CeCill v2
 novembre 2016
 """
 # pas d'import du modèle, même s'il y a une dépendance.
+# expressions régulières pour le contrôle de la saisie
+import re
 
 class Vue(object):
     #pour mettre en commun les traitements communs des vues
@@ -35,12 +37,15 @@ class Console(Vue):
         
         # affichage du tapis
         def voir_tapis(un_tapis):
-            # mise en forme en colonne, un coup par ligne
+            # mise en forme en colonnes, un coup par ligne
             vue = ""
             # en dur la marge, arbitraire
-            marge =  (self.largeur / 3 - self.l_max_carte)*' '
+            # mise en forme pour la carte puis le nom du jou[eur
+            ligne = (self.largeur / 3 - self.l_max_carte)*' ' \
+                    + "{carte:<" + str(self.l_max_carte) + "} {nom}\n"
             for coup in un_tapis:
-                vue = vue + marge + repr(coup[1]).ljust(self.l_max_carte)+ coup[0].nom + '\n'
+                vue = vue \
+                      + ligne.format(carte = repr(coup[1]), nom = coup[0].nom)
             return vue
         self.modele.tapis.__class__.__repr__ = voir_tapis    
         
@@ -49,10 +54,10 @@ class Console(Vue):
             vue = ""
             for joueur in table.joueurs:
                 vue = vue + repr(joueur) + '\n'
-            #vue = vue + repr(table.tapis)
-            x= table.tapis
-            temp = repr(x)
-            vue = vue + temp
+            vue = vue + repr(table.tapis)
+            #x= table.tapis
+            #temp = repr(x)
+            #vue = vue + temp
             return vue    
         self.modele.__class__.__repr__ = montrer
         
@@ -68,7 +73,9 @@ class Console(Vue):
                 vue = vue + " " + (repr(c) if joueur.visible else "X")
             vue = vue + "\t" + joueur.nom 
             return vue
-            
+
+        # Expression régulière qui contraint la saisie
+        self.format_saisie = re.compile("^[1-8]\Z")
         def saisir(un_joueur, des_options):
             """permet à un joueur de choisir une carte à donner"""
             # proposer la saisie
@@ -79,7 +86,12 @@ class Console(Vue):
             while True:
                 saisie = raw_input(prompt)
                 # convertir la saisie
-                numero = int(saisie)
+                verif = (self.format_saisie).match(saisie)
+                if verif:
+                    numero = int(saisie)                    
+                else:
+                    print erreur
+                    continue
                 # tester la validité de la saisie
                 if numero <= len(des_options) and numero > 0:
                     break
@@ -109,7 +121,7 @@ class Console(Vue):
         table.partie.pioche[0].__class__.__repr__ = voir_carte
         # longueur maximale de l'affichage d'une carte incluant les ()
         self.l_max_carte = 7
-        
+
     def afficher(self):
         """ affiche l'état courant d'ensemble"""
         print repr(self.modele)        
