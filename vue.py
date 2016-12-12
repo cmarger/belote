@@ -55,9 +55,6 @@ class Console(Vue):
             for joueur in table.joueurs:
                 vue = vue + repr(joueur) + '\n'
             vue = vue + repr(table.tapis)
-            #x= table.tapis
-            #temp = repr(x)
-            #vue = vue + temp
             return vue    
         self.modele.__class__.__repr__ = montrer
         
