@@ -14,6 +14,8 @@ novembre 2016
 """
 # utilisé quand il faut prendre une décision "au pif"
 from random import randint, shuffle
+# utilisé pour surveiller le tapis
+from support import Observable
 import logging
 
 logger = logging.getLogger("modele")
@@ -49,6 +51,8 @@ class Joueur(object):
         carte = self.donner_une_carte()
         logger.info("{} joue {}".format(self.nom, carte))
         tapis.append((self, carte))
+        # pour la surveillance du tapis, signaler un changement
+        tapis.change()
 
 class JoueurInteractif(Joueur):
     """Joeur qui prend ses décisions de l'extérieur"""
@@ -56,8 +60,10 @@ class JoueurInteractif(Joueur):
     pass
 
 # pour pouvoir changer la représentation d'une liste
-class Tapis(list):
-    pass
+class Tapis(list, Observable):
+    def __init__(self):
+        Observable.__init__(self)
+
 
 class Table(object):
     """ Lieu de rencontre des joueurs pour jouer"""
@@ -137,6 +143,8 @@ class Jeu(object):
                 une_partie.plis.append([coup for coup in une_partie.tapis])
                 # vider le tapis existant et non le réinitialiser vide
                 del une_partie.tapis[0:]
+                # pour surveiller le tapis, signale un changement
+                une_partie.tapis.change()
 
         def compter(une_partie):
             """ compter les points """

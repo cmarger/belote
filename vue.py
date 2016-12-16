@@ -34,15 +34,12 @@ class Console(Vue):
 
         # nombre de caractères en largeur et ligne en hauteur
         self.largeur = 80
-        self.hauteur = 40
-        # indicateur du joueur a cette vue
-        point_de_vue = 0
         print "Intialisation de la vue"
         
         # affichage du tapis
         def voir_tapis(un_tapis):
             # mise en forme en colonnes, un coup par ligne
-            vue = ""
+            vue = self.largeur*'-'
             # en dur la marge, arbitraire
             # mise en forme pour la carte puis le nom du jou[eur
             ligne = (self.largeur / 3 - self.l_max_carte)*' ' \
@@ -50,9 +47,15 @@ class Console(Vue):
             for coup in un_tapis:
                 vue = vue \
                       + ligne.format(carte = repr(coup[1]), nom = coup[0].nom)
+            vue = vue + self.largeur*'.'
             return vue
-        self.modele.tapis.__class__.__repr__ = voir_tapis    
-        
+        self.modele.tapis.__class__.__repr__ = voir_tapis
+        # mettre en place la surveillance du tapis
+        def surveiller(un_event):
+            print repr(un_event.source)
+        # en utilisant le fait que c'est un Observable
+        self.modele.tapis.subscribe(surveiller)
+
         logger.info("Intialisation de la vue")
         # affichage de la table
         def montrer(table):
@@ -139,14 +142,22 @@ if __name__=='__main__':
     une_table = m.Table()
     une_vue=Console(une_table)
 
-    def voir_joueurs(j1,j2):
+    def animer_joueurs(j1,j2):
+        print " animation de 2 joueurs ........... "
         print "2 joueurs :\n"
         print 'j1 avant = ', repr(j1)
-        print 'carte donnée par j1', j1.donner_une_carte()
-        print 'j1 après = ', repr(j1)
+        print 'carte choisie par j1 :', j1.donner_une_carte()
+        print 'j1 ensuite = ', repr(j1)
         print 'j2i avant = ', repr(j2i)
-        print 'carte donnée par j2i\n', j2i.donner_une_carte()
-        print 'j2i après = ', repr(j2i)               
+        c =  j2i.donner_une_carte()
+        print 'carte choisie par j2i :', c
+        print 'j2i ensuite = ', repr(j2i)               
+        print " animation de 2 joueurs ........... fin"
+
+    # Test carte
+    carte1 = m.Carte(3, 10)
+    carte2 = m.Carte(0,12)
+    print "2 cartes = ", carte1, " et ", repr(carte2)
 
     # Test Joueur
     j1 = m.Joueur("automatique", True)
@@ -156,19 +167,15 @@ if __name__=='__main__':
     print "j1 interactif ?", j1.__class__.__name__
     print "j2i interactif ?", j2i.__class__.__name__
     print "Sans la vue personnalisée ---------------------------"
-    voir_joueurs(j1, j2i)
+    animer_joueurs(j1, j2i)
 
+    print "Avec la vue personnalisée ---------------------------"
     une_table.accueuillir(j1, j2i)
     un_jeu = m.Jeu()
     une_table.dedier(un_jeu)
     une_vue.personnaliser(une_table)
-    print "Avec la vue personnalisée ---------------------------"
-    carte1 = m.Carte(3, 10)
-    carte2 = m.Carte(0,12)
-    print "2 cartes = ", carte1, " et ", repr(carte2)
-
     print repr(une_table)
-    voir_joueurs(j1, j2i)
+    animer_joueurs(j1, j2i)
     
     # Test tapis
     j1.jouer(une_table.tapis, un_jeu)
