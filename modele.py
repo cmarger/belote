@@ -59,18 +59,39 @@ class JoueurInteractif(Joueur):
     # les spécificités de cette classe sont définies dans la vue
     pass
 
-# pour pouvoir changer la représentation d'une liste
-class Tapis(list, Observable):
+
+class Carte(object):
+    """ Une carte à jouer """
+    def __init__(self, couleur, valeur):
+        self.couleur = couleur
+        self.valeur = valeur
+
+# pour pouvoir observer les distributions et les prises de cartes
+class Pioche(list, Observable):
+    """ Une pile de cartes """
     def __init__(self):
         Observable.__init__(self)
 
+# pour pouvoir changer la représentation d'une liste
+#et observer les changements sur le tapis
+class Tapis(list, Observable):
+    """ L'endroit où jouer les cartes """
+    def __init__(self):
+        Observable.__init__(self)
 
+# pour pouvoir voir les points
+class Points(dict, Observable):
+    def __init__(self):
+        Observable.__init__(self)
+    
 class Table(object):
     """ Lieu de rencontre des joueurs pour jouer"""
     def __init__(self):
        logger.info("Initialisation de la table")
        self.joueurs = []
        self.tapis = Tapis()
+       self.pioche = Pioche()
+       self.feuille_de_points = Points()
 
     def accueuillir(self, *joueurs):
         """définit les joueurs de la table"""
@@ -79,28 +100,23 @@ class Table(object):
     def dedier(self, jeu):
         """prépare la table à jouer à un jeu donné"""
         self.jeu = jeu
-        self.partie = jeu.creer_partie(self.joueurs, self.tapis)
+        self.partie = jeu.creer_partie(self.joueurs, self.tapis, self.pioche, self.feuille_de_points)
 
     def jouer(self):
         """ enchaine les parties tant qu'un joueur interactif le souhaite"""
-        # pour l'instant, joue une seule partie
         self.partie.derouler()
 
     def veut_arreter(self):
-        """ retourne vrai si la décision est prise d'arrêter de jouer"""
+        """retourne vrai si la décision est prise d'arrêter de jouer"""
+        # pour l'instant, joue une seule partie du jeu
         return True
-
-class Carte(object):
-    """ Une carte à jouer """
-    def __init__(self, couleur, valeur):
-        self.couleur = couleur
-        self.valeur = valeur
 
 class Jeu(object):
     """ Jeu de cartes """
     def __init__(self, nom = "Basique", nb_cartes = 32):
         self.nom = nom
         self.nb_cartes = nb_cartes
+        self.regles = {}
         # ensemble de cartes utilisées
         def generateur_cartes():
             couleurs = range(4)
@@ -148,21 +164,71 @@ class Jeu(object):
 
         def compter(une_partie):
             """ compter les points """
-            # par défaut même points pour chaque joueur
+            # par défaut, même points pour chaque joueur
             for joueur in une_partie.joueurs:
                 une_partie.scores[joueur] = 100
 
         # definition du processus de déroulement d'un partie
         self.plan_partie = (battre, distribuer, jouer, compter)
 
-    def creer_partie(self, joueurs, tapis):
-        return Partie(self, joueurs, tapis)
+        # définition des règles
+        def finir(des_points, nb_donnes = 0):
+            """ 
+            retourne True pour finir le jeu, False pour continuer
+            selon les points accumulés ou le nb de donnes  
+            """
+            decision = True
+            #pour l'instant, la fin de partie est après la 12° donne
+            if nb_donnes < 2:
+                decision = False
+            return decision    
+        self.regles['fin'] = finir
+        
+                
+    def creer_partie(self, joueurs, tapis, pioche, feuille_de_points):
+        return Partie(self, joueurs, tapis, pioche, feuille_de_points)
 
 class Partie(object):
     """ Partie de cartes """
-    def __init__(self, jeu, joueurs, tapis):
+    def __init__(self, jeu, joueurs, tapis, pioche, feuille_de_points):
         self.jeu = jeu
-        self.pioche = [cartes for cartes in jeu.creer_cartes()]
+        # mémoriser les données nécessaires à une donne pour créer les suivantes
+        self.joueurs = joueurs
+        self.tapis = tapis
+        self.pioche = pioche
+        self.feuille_de_points = feuille_de_points
+        # prépare la première la donne à être jouée
+        self.donne_en_cours = Donne(self.jeu, self.joueurs, self.tapis, self.pioche)
+        # toutes les donnes jouées de la partie
+        self.donnes = []
+        
+    # pour qu'un jeu puisse comproter plusieurs donnes
+    def derouler(self):
+        """ enchaine les donnes jusqu'à la fin du jeu """
+        nb_donnes = 0
+        self.feuille_de_points.clear()
+        while True:
+            self.donne_en_cours.derouler()
+            nb_donnes = nb_donnes + 1
+            # cumule les points de chaque donne 
+            self.feuille_de_points.change()
+            # déterminer la fin la jeu selon la règle ad hoc
+            if self.jeu.regles['fin'](self.feuille_de_points, nb_donnes):
+                # mémorise l'ensemble des donnes jouées
+                break
+            else:
+                # conserve les donnes jouées en mémoire pour plus tard
+                self.donnes.append(self.donne_en_cours)
+                # continuer la partie avec une nouvelle donne
+                self.donne_en_cours = Donne(self.jeu, self.joueurs, self.tapis, self.pioche)
+                continue
+
+class Donne(object):
+    """ Donne d'une partie de cartes """
+    def __init__(self, jeu, joueurs, tapis, pioche):
+        self.jeu = jeu
+        self.pioche = pioche
+        self.pioche.extend([cartes for cartes in jeu.creer_cartes()])
         self.joueurs = joueurs
         self.tapis = tapis
         self.plan = jeu.plan_partie
@@ -195,27 +261,41 @@ if __name__=='__main__':
     print un_joueur.donner_une_carte()
     print un_joueur.main
 
-    # etape par etape
+    # tests d'une donne, etape par etape
     une_table.accueuillir(Joueur("un"), Joueur("deux"), Joueur("trois"), Joueur("quatre"))
-    une_partie = un_jeu.creer_partie(une_table.joueurs, une_table.tapis)
-    def print_partie(une_partie):
-        print 'Affichage de la partie :'
-        print 'pioche = ', une_partie.pioche
-        print 'joueurs = ', [j.main for j in une_partie.joueurs]
-        print 'tapis = ', une_partie.tapis, len(une_partie.tapis)
-        print 'scores = ', une_partie.scores
-        print 'plis = ', une_partie.plis, len(une_partie.plis)
-        print 'process =', une_partie.plan
+    une_donne = Donne(un_jeu, une_table.joueurs, une_table.tapis, une_table.pioche)
+
+    def print_donne(une_donne):
+        print 'Affichage de la donne :---------'
+        print 'pioche = ', une_donne.pioche
+        print 'joueurs = ', [j.main for j in une_donne.joueurs]
+        print 'tapis = ', une_donne.tapis, len(une_donne.tapis)
+        print 'scores = ', une_donne.scores
+        print 'plis = ', une_donne.plis, len(une_donne.plis)
+        print 'process =', une_donne.plan
         print "--------------------------------- "
 
-    print_partie(une_partie)
-    for pas in une_partie.plan:
+    print_donne(une_donne)
+    for pas in une_donne.plan:
         print '===> ', pas.__name__
-        pas(une_partie)
-        print_partie(une_partie)
+        pas(une_donne)
+        print_donne(une_donne)
+
+
+    #test d'une partie
+    une_partie = un_jeu.creer_partie(
+        une_table.joueurs, une_table.tapis, une_table.pioche, une_table.feuille_de_points)
+    def print_partie(une_partie):
+        print 'Affichage de la partie :---------'
+        print 'joueurs = ', [j.main for j in une_partie.joueurs]
+        print 'tapis = ', une_partie.tapis, len(une_partie.tapis)
+        print 'points = ', une_partie.feuille_de_points
+        print "--------------------------------- "
 
     # enchainement
-    une_partie = un_jeu.creer_partie(une_table.joueurs, une_table.tapis)
+    une_partie = un_jeu.creer_partie(
+        une_table.joueurs, une_table.tapis, une_table.pioche, une_table.feuille_de_points)
     print_partie(une_partie)
     une_partie.derouler()
     print_partie(une_partie)
+

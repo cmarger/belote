@@ -69,8 +69,9 @@ def animer(table_de_jeu):
     table_de_jeu.activer()
 
 if __name__=='__main__':
-    # la variable est globale pour qu'elle persiste à la fin de l'exécution
-    # elle pourra ainsi être auscultée pour les tests
+    # la variable table est globale pour qu'elle soit visible pendant
+    # l'execution par le debogueur,
+    # elle pourra ainsi faciliter la mise au point
     logger.info("Lancement Belote")
     table_de_jeu = None
     animer(table_de_jeu)

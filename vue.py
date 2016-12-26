@@ -34,7 +34,6 @@ class Console(Vue):
 
         # nombre de caractères en largeur et ligne en hauteur
         self.largeur = 80
-        print "Intialisation de la vue"
         
         # affichage du tapis
         def voir_tapis(un_tapis):
@@ -56,6 +55,27 @@ class Console(Vue):
         # en utilisant le fait que c'est un Observable
         self.modele.tapis.subscribe(surveiller)
 
+        # affichage des points
+        # largeur prévue pour un jeu en 1000 points
+        self.l_max_points = 5
+        def voir_points(une_feuille):
+            # mise en forme en colonnes, un coup par ligne
+            vue = self.largeur*'*'
+            # en dur la marge, arbitraire
+            # mise en forme pour la carte puis le nom du jou[eur
+            ligne = (self.largeur / 3 - self.l_max_points)*' ' \
+                    + "{valeur:<" + str(self.l_max_points) + "} {nom}\n"
+            for points in une_feuille.iteritems():
+                vue = vue \
+                      + ligne.format(valeur = repr(points[0]), nom = points[1].nom)
+            vue = vue + self.largeur*'*'
+            return vue
+        self.modele.feuille_de_points.__class__.__repr__ = voir_points
+        # mettre en place la surveillance de la feuille
+        # en utilisant le fait que c'est un Observable
+        # avec la même fonction générique que le tapis
+        self.modele.feuille_de_points.subscribe(surveiller)
+
         logger.info("Intialisation de la vue")
         # affichage de la table
         def montrer(table):
@@ -63,6 +83,7 @@ class Console(Vue):
             for joueur in table.joueurs:
                 vue = vue + repr(joueur) + '\n'
             vue = vue + repr(table.tapis)
+            vue = vue + repr(table.feuille_de_points)
             return vue    
         self.modele.__class__.__repr__ = montrer
 
@@ -121,11 +142,12 @@ class Console(Vue):
             vue = couleurs[une_carte.couleur] + '-'
             vue = vue + (str(une_carte.valeur) if une_carte.valeur < 11 else valeurs[une_carte.valeur - 11])
             return vue
-
-        # modifier l'affichage d'une carte
-        table.partie.pioche[0].__class__.__repr__ = voir_carte
         # longueur maximale de l'affichage d'une carte incluant les ()
         self.l_max_carte = 7
+
+        # modifier l'affichage d'une carte
+        # contraint l'existence d'au moins une carte dans la pioche
+        table.pioche[0].__class__.__repr__ = voir_carte
 
     def afficher(self):
         """ affiche l'état courant d'ensemble"""
