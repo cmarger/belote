@@ -34,6 +34,8 @@ class Console(Vue):
 
         # nombre de caractères en largeur et ligne en hauteur
         self.largeur = 80
+
+        logger.info("Intialisation de la vue")
         
         # affichage du tapis
         def voir_tapis(un_tapis):
@@ -67,7 +69,7 @@ class Console(Vue):
                     + "{valeur:<" + str(self.l_max_points) + "} {nom}\n"
             for points in une_feuille.iteritems():
                 vue = vue \
-                      + ligne.format(valeur = repr(points[0]), nom = points[1].nom)
+                      + ligne.format(valeur = repr(points[1]), nom = points[0].nom)
             vue = vue + self.largeur*'*'
             return vue
         self.modele.feuille_de_points.__class__.__repr__ = voir_points
@@ -76,7 +78,6 @@ class Console(Vue):
         # avec la même fonction générique que le tapis
         self.modele.feuille_de_points.subscribe(surveiller)
 
-        logger.info("Intialisation de la vue")
         # affichage de la table
         def montrer(table):
             vue = ""
