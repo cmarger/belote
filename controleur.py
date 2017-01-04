@@ -61,7 +61,6 @@ class Controleur(object):
                 break
             else:
                 continue
-        self.vue.afficher()
 
 def animer(table_de_jeu):
     table_de_jeu = Controleur()

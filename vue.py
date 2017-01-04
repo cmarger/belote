@@ -63,21 +63,41 @@ class Console(Vue):
         def voir_points(une_feuille):
             # mise en forme en colonnes, un coup par ligne
             vue = self.largeur*'*'
-            # en dur la marge, arbitraire
-            # mise en forme pour la carte puis le nom du jou[eur
-            ligne = (self.largeur / 3 - self.l_max_points)*' ' \
+            
+            # après que les gagnants ont été proclamés, ils sont affichés 
+            if une_feuille.champions_changed:
+                # en dur la marge, arbitraire
+                # mise en forme pour les totaux de points puis le nom du joueur
+                ligne = (self.largeur / 3 - self.l_max_points)*' ' \
                     + "{valeur:<" + str(self.l_max_points) + "} {nom}\n"
-            for points in une_feuille.iteritems():
-                vue = vue \
-                      + ligne.format(valeur = repr(points[1]), nom = points[0].nom)
+                for joueur, points in une_feuille.iteritems():
+                    vue = vue \
+                      + ligne.format(valeur = repr(points), nom = joueur.nom)
+                # les gagnants
+                vue = vue + \
+                      "Les gagnants de la partie sont :".center(self.largeur) +\
+                      "\n"
+                vue = vue + \
+                      str([champion.nom for champion in une_feuille.champions]).\
+                      center(self.largeur)
+            else:
+                # après chaque donne, les totaux sont affichés,
+                # le détail des points de chaque donne devrait l'être aussi
+                # en tableau : colonne = joueur, ligne = donne,
+                # mise en forme pour les totaux de points puis le nom du joueur
+                ligne = (self.largeur / 3 - self.l_max_points)*' ' \
+                    + "{valeur:<" + str(self.l_max_points) + "} {nom}\n"
+                for joueur, points in une_feuille.iteritems():
+                    vue = vue \
+                      + ligne.format(valeur = repr(points), nom = joueur.nom)
+                
             vue = vue + self.largeur*'*'
             return vue
         self.modele.feuille_de_points.__class__.__repr__ = voir_points
-        # mettre en place la surveillance de la feuille
-        # en utilisant le fait que c'est un Observable
-        # avec la même fonction générique que le tapis
-        self.modele.feuille_de_points.subscribe(surveiller)
 
+        # mettre en place la surveillance de la feuille
+        self.modele.feuille_de_points.subscribe(surveiller)
+        
         # affichage de la table
         def montrer(table):
             vue = ""

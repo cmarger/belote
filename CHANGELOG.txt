@@ -1,0 +1,9 @@
+
+améliorations
+Adapter la classe Jeu pour enchainer les parties
+Adapter la vue Console pour suivre le déroulement du jeu
+Oter les print du Controleur, les remplacer par un log 
+
+0.1 (Decembre 2016)
+version initiale
+principe MVC modele-vue-controleur

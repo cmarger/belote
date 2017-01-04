@@ -92,6 +92,8 @@ class Points(dict, Observable):
         self.partiels = []
         # pour mémoriser les joueurs en tête, en cours et en fin de partie
         self.champions = set()
+        # pour savoir quand afficher les gagnants d'une partie
+        self.champions_changed = False
     
 class Table(object):
     """ Lieu de rencontre des joueurs pour jouer"""
@@ -118,6 +120,7 @@ class Table(object):
     def veut_arreter(self):
         """retourne vrai si la décision est prise d'arrêter de jouer"""
         # pour l'instant, joue une seule partie du jeu
+        # passer de la partie finie à une nouvelle partie sinon
         return True
 
 class Jeu(object):
@@ -125,7 +128,11 @@ class Jeu(object):
     def __init__(self, nom = "Basique", nb_cartes = 32):
         self.nom = nom
         self.nb_cartes = nb_cartes
-        self.regles = {}
+        # nombre maximal de donne par défaut pour finir la partie
+        self.nb_max_donnes = 2
+        # nombre maximal de points par défaut pour finir la partie
+        self.nb_max_points = 1000
+
         # ensemble de cartes utilisées
         def generateur_cartes():
             couleurs = range(4)
@@ -179,53 +186,6 @@ class Jeu(object):
 
         # definition du processus de déroulement d'un donne
         self.plan_donne = (battre, distribuer, jouer, compter)
-
-        
-        # definition des actions d'une partie
-        def cumuler(une_partie, une_donne):
-            """ 
-            cumuler les points d'une donne dans le résultat de la partie
-            par addition des points pour chaque joueur
-            """
-            une_partie.donnes.append(une_donne)
-            une_partie.feuille_de_points.partiels.append(une_donne.scores)
-            if une_partie.feuille_de_points:
-                for points in une_donne.scores.iteritems():
-                    une_partie.feuille_de_points[points[0]] = \
-                    une_partie.feuille_de_points[points[0]] + points[1] 
-            else:
-                for points in une_donne.scores.iteritems():
-                    une_partie.feuille_de_points[points[0]] = points[1]
-                    
-        def proclamer(une_partie):
-            """ déterminer le ou les gagnants selon la feuille de points """
-            # par défaut, celui qui a le nombre de points le plus grand
-            max = 0
-            une_partie.feuille_de_points.champions = set()
-            for points in une_partie.feuille_de_points.iteritems():
-                # pour accepter le sex-eaquo, il faut aussi l'égalité
-                if points[1] >= max:
-                    max = points[1]
-                    une_partie.feuille_de_points.champions.add(points[0])
-        
-        Partie.cumuler = cumuler
-        Partie.proclamer = proclamer
-        
-        # définition des règles
-        # nombre maximal de donne par défaut
-        self.nb_max_donnes = 12
-        def finir(des_points, nb_donnes = 0):
-            """ 
-            retourne True pour finir le jeu, False pour continuer
-            selon les points accumulés ou le nb de donnes  
-            """
-            decision = True
-            #pour l'instant, la fin de partie est après la 12° donne
-            if nb_donnes < self.nb_max_donnes:
-                decision = False
-            return decision    
-        self.regles['fin'] = finir
-        
                 
     def creer_partie(self, joueurs, tapis, pioche, feuille_de_points):
         """ 
@@ -259,17 +219,71 @@ class Partie(object):
             # cumule les points de chaque donne 
             # conserve les donnes jouées en mémoire pour plus tard
             self.cumuler(self.donne_en_cours)
-            self.proclamer()
             self.feuille_de_points.change()
             # déterminer la fin la jeu selon la règle ad hoc
-            if self.jeu.regles['fin'](self.feuille_de_points, nb_donnes):
-                # mémorise l'ensemble des donnes jouées
+            if self.est_finie(self.feuille_de_points, nb_donnes):
+                # détermine les gagnants
+                self.proclamer()
+                self.feuille_de_points.change()
+                # mémorise l'ensemble des donnes jouées (plus tard)
                 break
             else:
                 # continuer la partie avec une nouvelle donne
                 self.donne_en_cours = Donne(self.jeu, self.joueurs, self.tapis, self.pioche)
                 continue
 
+    def cumuler(self, une_donne):
+        """ 
+        cumuler les points d'une donne dans le résultat de la partie
+        par addition des points pour chaque joueur
+        """
+        self.donnes.append(une_donne)
+        self.feuille_de_points.partiels.append(une_donne.scores)
+        if self.feuille_de_points:
+            for joueur, points in une_donne.scores.iteritems():
+                self.feuille_de_points[joueur] = \
+                self.feuille_de_points[joueur] + points
+        else:
+            for joueur, points in une_donne.scores.iteritems():
+                self.feuille_de_points[joueur] = points
+                    
+    def proclamer(self):
+        """ déterminer le ou les gagnants selon la feuille de points """
+        # par défaut, celui qui a le nombre de points le plus grand
+        max = 0
+        self.feuille_de_points.champions = set()
+        for joueur, points in self.feuille_de_points.iteritems():
+            # pour accepter les ex-eaquo, il faut aussi l'égalité
+            if points >= max:
+                max = points
+                self.feuille_de_points.champions.add(joueur)
+        self.feuille_de_points.champions_changed = True
+
+    def est_finie(self, des_points, nb_donnes = 0):
+        """ 
+        retourne True pour finir la partie, False pour continuer
+        selon les points accumulés ou le nombre de donnes  
+        """
+        decision = False
+        # critère du nombre de donnes
+        if self.jeu.nb_max_donnes:
+            if nb_donnes >= self.jeu.nb_max_donnes:
+                decision = True
+        elif self.jeu.nb_max_points:
+            # critère du nombre de points    
+            for joueur, points in self.feuille_de_points.iteritems():
+                if points >= self.jeu.nb_max_points:
+                    decision = True
+                    break
+        else:
+            # il manque la définition pour au moins un des 2 critères
+            logger.error("nb max de point = {} et nb max donnes ={}"\
+            .format(self.jeu.nb_max_points, self.jeu.nb_max_donnes))
+            # par précaution, la partie d'arrête pour éviter la boucle infinie
+            decision = True
+        return decision    
+                
+                
 class Donne(object):
     """ Donne d'une partie de cartes """
     def __init__(self, jeu, joueurs, tapis, pioche):
@@ -353,3 +367,20 @@ if __name__=='__main__':
     une_partie.derouler()
     print_partie(une_partie)
 
+    #test d'un jeu
+    print "Deroulement d'un jeu fils"
+    class Jeu_test(Jeu):
+        def __init__(self):
+            Jeu.__init__(self)
+            self.nb_max_donnes = 3
+    
+    un_jeu = Jeu_test()
+    print un_jeu.nb_max_donnes
+    une_table = Table()
+    une_table.accueuillir(Joueur("un"), Joueur("deux"), Joueur("trois"), Joueur("quatre"))
+    une_table.dedier(un_jeu)
+
+    une_partie = un_jeu.creer_partie(
+        une_table.joueurs, une_table.tapis, une_table.pioche, une_table.feuille_de_points)
+    une_partie.derouler()
+    print_partie(une_partie)
