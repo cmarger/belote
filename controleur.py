@@ -19,6 +19,7 @@ logger = logging.getLogger("controleur")
 # les 2 autres modules sont importés pour être utilisés.
 import modele as m
 import vue as v
+from jeu import Jeu
 
 
 class Controleur(object):
@@ -48,7 +49,7 @@ class Controleur(object):
 
         # prepare la table pour un jeu de cartes
         # pour commencer un jeu générique
-        self.table.dedier(m.Jeu())
+        self.table.dedier(Jeu())
         self.vue.personnaliser(self.table)
         self.vue.afficher()
 

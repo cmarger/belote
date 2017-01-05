@@ -1,9 +1,13 @@
-
-améliorations
+version en cours
+Améliorations
 Adapter la classe Jeu pour enchainer les parties
 Adapter la vue Console pour suivre le déroulement du jeu
 Oter les print du Controleur, les remplacer par un log 
 
+Changements techniques
+séparer modele.py en modele.py et jeu.py pour ouvrir à d'autres implémentations
+
 0.1 (Decembre 2016)
 version initiale
-principe MVC modele-vue-controleur
+principe MVC modele-vue-controleur en 3 modules :
+modele.py, vue.py et controleur.py

@@ -1,9 +1,7 @@
 Objectif : jouer une partie de belote sur son PC en mode caractère
+
 Reste à faire a minima :
 Dériver une classe de Jeu spécifique à la belote
 Ajouter des règles au Jeu
 Afficher le détails des points par donne à la fin d'une donne
-
-Changements techniques
-séparer modele.py en modele.py et jeu.py 
-pour ouvrir à d'autres implémentations
+(dans la méthode voir_points de vue.py)

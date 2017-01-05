@@ -182,6 +182,7 @@ class Graphique(Vue):
 # pour des tests propres au module
 if __name__=='__main__':
     import modele as m
+    from jeu import Jeu
     une_table = m.Table()
     une_vue=Console(une_table)
 
@@ -214,7 +215,7 @@ if __name__=='__main__':
 
     print "Avec la vue personnalisée ---------------------------"
     une_table.accueuillir(j1, j2i)
-    un_jeu = m.Jeu()
+    un_jeu = Jeu()
     une_table.dedier(un_jeu)
     une_vue.personnaliser(une_table)
     print repr(une_table)
